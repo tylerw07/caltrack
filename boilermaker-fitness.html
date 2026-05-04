@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boilermaker Fit</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #CFB991;
+    --black: #000000;
+    --dark: #111111;
+    --dark2: #1a1a1a;
+    --dark3: #222222;
+    --gold-dim: #a08a6a;
+    --gold-bright: #e8d4a8;
+    --text: #f0e8d8;
+    --text-dim: #8a7a6a;
+    --danger: #e05555;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--dark);
+    border-bottom: 2px solid var(--gold);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .header-date {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .hamburger {
+    background: none;
+    border: 1.5px solid var(--gold-dim);
+    border-radius: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.2s;
+  }
+  .hamburger:hover { border-color: var(--gold); }
+  .hamburger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--dark2);
+    border-bottom: 2px solid var(--dark3);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-dim);
+    border: none;
+    background: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: var(--dark);
+  }
+
+  /* CONTENT */
+  .tab-content { display: none; padding: 20px; }
+  .tab-content.active { display: block; }
+
+  /* DONUT CHART */
+  .donut-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .donut-wrap {
+    position: relative;
+    width: 190px;
+    height: 190px;
+  }
+
+  .donut-wrap svg {
+    transform: rotate(-90deg);
+    width: 190px;
+    height: 190px;
+  }
+
+  .donut-bg {
+    fill: none;
+    stroke: var(--dark3);
+    stroke-width: 22;
+  }
+
+  .donut-fill {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 22;
+    stroke-linecap: round;
+    stroke-dasharray: 502;
+    stroke-dashoffset: 502;
+    transition: stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1), stroke 0.3s;
+  }
+
+  .donut-fill.danger { stroke: var(--danger); }
+
+  .donut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .donut-cal {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .donut-cal.danger { color: var(--danger); }
+
+  .donut-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .donut-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 14px;
+  }
+
+  .stat-pill {
+    background: var(--dark2);
+    border: 1px solid var(--dark3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    text-align: center;
+  }
+
+  .stat-pill .val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--gold);
+  }
+
+  .stat-pill .lbl {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ADD FOOD */
+  .add-food-section {
+    background: var(--dark2);
+    border: 1px solid var(--dark3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
+
+  .input-group label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .input-group input {
+    background: var(--dark3);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .input-group input:focus { border-color: var(--gold); }
+
+  .add-btn {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+    margin-top: 16px;
+  }
+
+  .add-btn:hover { background: var(--gold-bright); }
+  .add-btn:active { transform: scale(0.97); }
+
+  /* FOOD LOG */
+  .food-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .food-item {
+    background: var(--dark2);
+    border: 1px solid var(--dark3);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .food-info { flex: 1; }
+
+  .food-desc {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .food-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+
+  .food-cal {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    margin-right: 12px;
+  }
+
+  .del-btn {
+    background: none;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .del-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* WORKOUT TAB */
+  .day-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+  }
+
+  .day-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .workout-card {
+    background: var(--dark2);
+    border: 1px solid var(--dark3);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .workout-card-header {
+    background: var(--dark3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .workout-card-header .icon {
+    font-size: 16px;
+  }
+
+  .workout-card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .exercise-row {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e1e1e;
+  }
+
+  .exercise-row:last-child { border-bottom: none; }
+
+  .exercise-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .exercise-name.main {
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .exercise-sets {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .cardio-card {
+    background: linear-gradient(135deg, #1a1500 0%, #2a2000 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .cardio-icon {
+    font-size: 28px;
+  }
+
+  .cardio-info { flex: 1; }
+
+  .cardio-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+
+  .cardio-detail {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .rest-day {
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .rest-day .big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    color: var(--gold);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  .rest-day .sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* MENU OVERLAY */
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .menu-overlay.open { opacity: 1; pointer-events: all; }
+
+  .menu-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 290px;
+    height: 100vh;
+    background: var(--dark2);
+    border-left: 2px solid var(--gold);
+    z-index: 201;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-drawer.open { transform: translateX(0); }
+
+  .menu-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--dark3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .menu-header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+
+  .close-btn {
+    background: none;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 18px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .close-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .history-item {
+    background: var(--dark3);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border 0.2s;
+    border: 1px solid transparent;
+  }
+
+  .history-item:hover { border-color: var(--gold-dim); }
+
+  .history-date {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .history-bar-wrap {
+    background: var(--dark2);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .history-bar {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+
+  .history-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .history-foods {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-top: 1px solid #2a2a2a;
+    padding-top: 8px;
+    display: none;
+  }
+
+  .history-item.expanded .history-foods { display: block; }
+
+  .history-food-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+  }
+
+  .empty-history {
+    text-align: center;
+    color: var(--text-dim);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+    padding: 30px 0;
+    font-size: 14px;
+  }
+
+  .menu-footer {
+    padding: 16px;
+    border-top: 1px solid var(--dark3);
+  }
+
+  .goal-display {
+    background: var(--dark3);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .goal-display .g-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .goal-display .g-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--gold);
+  }
+
+  .bw-menu-btn {
+    width: 100%;
+    background: var(--dark3);
+    border: 1.5px solid var(--gold-dim);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    margin-bottom: 0;
+  }
+  .bw-menu-btn:hover { background: #2a2a2a; border-color: var(--gold); }
+
+  .bw-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .bw-overlay.open { opacity: 1; pointer-events: all; }
+
+  .bw-modal {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85vh;
+    background: var(--dark2);
+    border-top: 2px solid var(--gold);
+    border-radius: 16px 16px 0 0;
+    z-index: 301;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+  }
+  .bw-modal.open { transform: translateY(0); }
+
+  .bw-modal-header {
+    padding: 18px 20px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--dark3);
+    flex-shrink: 0;
+  }
+
+  .bw-modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+
+  .bw-modal-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 20px 0;
+    flex-shrink: 0;
+  }
+
+  .bw-modal-body {
+    overflow-y: auto;
+    padding: 14px 20px 30px;
+    flex: 1;
+  }
+
+  .bw-note {
+    background: #1a1500;
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--gold-dim);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .bw-exercise {
+    background: var(--dark3);
+    border-radius: 10px;
+    padding: 13px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .bw-ex-left {}
+
+  .bw-ex-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .bw-ex-name.main-lift {
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .bw-ex-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  .bw-ex-sets {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+
+  .bw-cardio {
+    background: #1a1500;
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    padding: 13px 14px;
+    margin-bottom: 10px;
+  }
+
+  .bw-cardio-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .bw-cardio-detail {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .bw-rest {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--text-dim);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 2px;
+    font-size: 15px;
+  }
+
+  .no-workout {
+    background: var(--dark2);
+    border: 1px solid var(--dark3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Boilermaker Fit</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <button class="hamburger" onclick="openMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('calories', this)">Calories</button>
+  <button class="tab" onclick="switchTab('workout', this)">Workout</button>
+</div>
+
+<!-- CALORIES TAB -->
+<div class="tab-content active" id="tab-calories">
+
+  <div class="donut-container">
+    <div class="donut-wrap">
+      <svg viewBox="0 0 190 190">
+        <circle class="donut-bg" cx="95" cy="95" r="80"/>
+        <circle class="donut-fill" id="donutFill" cx="95" cy="95" r="80"/>
+      </svg>
+      <div class="donut-center">
+        <div class="donut-cal" id="calsLeft">2000</div>
+        <div class="donut-label">CAL LEFT</div>
+      </div>
+    </div>
+    <div class="donut-stats">
+      <div class="stat-pill">
+        <div class="val" id="statGoal">2000</div>
+        <div class="lbl">Goal</div>
+      </div>
+      <div class="stat-pill">
+        <div class="val" id="statEaten">0</div>
+        <div class="lbl">Eaten</div>
+      </div>
+      <div class="stat-pill">
+        <div class="val" id="statLeft2">2000</div>
+        <div class="lbl">Remain</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="add-food-section">
+    <div class="section-title">Log Food</div>
+    <div class="input-row">
+      <div class="input-group" style="flex:2">
+        <label>Description</label>
+        <input type="text" id="foodDesc" placeholder="e.g. Culver's Butter Burger" />
+      </div>
+      <div class="input-group" style="flex:1">
+        <label>Calories</label>
+        <input type="number" id="foodCal" placeholder="e.g. 700" min="0" />
+      </div>
+    </div>
+    <button class="add-btn" onclick="addFood()" style="width:100%; margin-top:12px">+ ADD</button>
+  </div>
+
+  <div class="section-title">Today's Log</div>
+  <div class="food-list" id="foodList">
+    <div class="no-workout" id="emptyLog">No food logged yet. Add something above ↑</div>
+  </div>
+</div>
+
+<!-- WORKOUT TAB -->
+<div class="tab-content" id="tab-workout">
+  <div id="workoutContent"></div>
+</div>
+
+<!-- MENU OVERLAY -->
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+<div class="menu-drawer" id="menuDrawer">
+  <div class="menu-header">
+    <div class="menu-header-title">History</div>
+    <button class="close-btn" onclick="closeMenu()">✕</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+  <div class="menu-footer">
+    <button class="bw-menu-btn" onclick="openBWModal()">Bodyweight Substitute</button>
+    <div class="goal-display" style="margin-top:10px">
+      <div class="g-label">Daily Calorie Goal</div>
+      <div class="g-val">2,000 CAL</div>
+    </div>
+  </div>
+</div>
+
+<!-- BODYWEIGHT MODAL -->
+<div class="bw-overlay" id="bwOverlay" onclick="closeBWModal()"></div>
+<div class="bw-modal" id="bwModal">
+  <div class="bw-modal-header">
+    <div class="bw-modal-title">Bodyweight Substitute</div>
+    <button class="close-btn" onclick="closeBWModal()">✕</button>
+  </div>
+  <div class="bw-modal-sub" id="bwSub"></div>
+  <div class="bw-modal-body" id="bwBody"></div>
+</div>
+
+<script>
+  const GOAL = 2000;
+  const CIRCUMFERENCE = 2 * Math.PI * 80; // ~502.65
+
+  const workouts = {
+    1: { // Monday
+      label: "MONDAY",
+      sub: "Back Squat / Legs",
+      cardio: true,
+      exercises: [
+        { name: "Back Squat", sets: "4 × 5", main: true },
+        { name: "Leg Press", sets: "4 × 10" },
+        { name: "Romanian Deadlift", sets: "3 × 8" },
+        { name: "Leg Curl", sets: "3 × 12" },
+        { name: "Calf Raises", sets: "3 × 15" },
+      ]
+    },
+    2: { // Tuesday
+      label: "TUESDAY",
+      sub: "Bench / Chest & Upper — BACK EMPHASIS",
+      cardio: true,
+      exercises: [
+        { name: "Bench Press", sets: "4 × 5", main: true },
+        { name: "Barbell Row", sets: "4 × 8" },
+        { name: "Lat Pulldown", sets: "3 × 10" },
+        { name: "Cable Row", sets: "3 × 10" },
+        { name: "Face Pulls", sets: "3 × 15" },
+      ]
+    },
+    3: { // Wednesday
+      label: "WEDNESDAY",
+      sub: "Rest Day",
+      rest: true
+    },
+    4: { // Thursday
+      label: "THURSDAY",
+      sub: "Front Squat / Legs",
+      cardio: true,
+      exercises: [
+        { name: "Front Squat", sets: "4 × 5", main: true },
+        { name: "Leg Press", sets: "4 × 10" },
+        { name: "Leg Extension", sets: "3 × 12" },
+        { name: "Leg Curl", sets: "3 × 12" },
+        { name: "Calf Raises", sets: "3 × 15" },
+      ]
+    },
+    5: { // Friday
+      label: "FRIDAY",
+      sub: "Bench / Chest & Upper",
+      cardio: true,
+      exercises: [
+        { name: "Bench Press", sets: "4 × 8", main: true },
+        { name: "Incline Dumbbell Press", sets: "3 × 10" },
+        { name: "Dumbbell Shoulder Press", sets: "3 × 10" },
+        { name: "Tricep Pushdown", sets: "3 × 12" },
+        { name: "Lateral Raises", sets: "3 × 15" },
+      ]
+    },
+    6: { // Saturday
+      label: "SATURDAY",
+      sub: "Rest Day",
+      rest: true
+    },
+    0: { // Sunday
+      label: "SUNDAY",
+      sub: "Rest Day",
+      rest: true
+    }
+  };
+
+  // State
+  let todayKey = getTodayKey();
+  let foods = loadFoods();
+
+  function purgeOldData() {
+    try {
+      const all = JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      const cutoffKey = cutoff.toISOString().split('T')[0];
+      let changed = false;
+      Object.keys(all).forEach(k => {
+        if (k < cutoffKey) { delete all[k]; changed = true; }
+      });
+      if (changed) localStorage.setItem('boilerFit_foods', JSON.stringify(all));
+    } catch {}
+  }
+
+  function getTodayKey() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function loadFoods() {
+    try {
+      const all = JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
+      return all[todayKey] || [];
+    } catch { return []; }
+  }
+
+  function saveFoods() {
+    try {
+      const all = JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
+      all[todayKey] = foods;
+      localStorage.setItem('boilerFit_foods', JSON.stringify(all));
+    } catch {}
+  }
+
+  function getAllHistory() {
+    try {
+      return JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
+    } catch { return {}; }
+  }
+
+  // Date display
+  function setHeaderDate() {
+    const now = new Date();
+    const opts = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+    document.getElementById('headerDate').textContent = now.toLocaleDateString('en-US', opts).toUpperCase();
+  }
+
+  // Donut
+  function updateDonut() {
+    const eaten = foods.reduce((s, f) => s + f.cal, 0);
+    const left = GOAL - eaten;
+    const pct = Math.min(eaten / GOAL, 1);
+    const offset = CIRCUMFERENCE - pct * CIRCUMFERENCE;
+
+    const fill = document.getElementById('donutFill');
+    const calsEl = document.getElementById('calsLeft');
+
+    fill.style.strokeDashoffset = offset;
+    fill.classList.toggle('danger', left < 0);
+    calsEl.classList.toggle('danger', left < 0);
+
+    calsEl.textContent = left < 0 ? '+' + Math.abs(left) : left;
+    document.getElementById('statGoal').textContent = GOAL;
+    document.getElementById('statEaten').textContent = eaten;
+    document.getElementById('statLeft2').textContent = left < 0 ? '-' + Math.abs(left) : left;
+  }
+
+  // Food list
+  function renderFoods() {
+    const list = document.getElementById('foodList');
+    const empty = document.getElementById('emptyLog');
+    if (foods.length === 0) {
+      list.innerHTML = '<div class="no-workout" id="emptyLog">No food logged yet. Add something above ↑</div>';
+      return;
+    }
+    list.innerHTML = foods.map((f, i) => `
+      <div class="food-item">
+        <div class="food-info">
+          <div class="food-desc">${escHtml(f.desc)}</div>
+          <div class="food-time">${f.time}</div>
+        </div>
+        <div class="food-cal">${f.cal}</div>
+        <button class="del-btn" onclick="deleteFood(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function addFood() {
+    const desc = document.getElementById('foodDesc').value.trim();
+    const cal = parseInt(document.getElementById('foodCal').value);
+    if (!desc || isNaN(cal) || cal < 0) {
+      document.getElementById('foodDesc').focus();
+      return;
+    }
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    foods.push({ desc, cal, time });
+    saveFoods();
+    document.getElementById('foodDesc').value = '';
+    document.getElementById('foodCal').value = '';
+    renderFoods();
+    updateDonut();
+  }
+
+  function deleteFood(i) {
+    foods.splice(i, 1);
+    saveFoods();
+    renderFoods();
+    updateDonut();
+  }
+
+  // Enter key on inputs
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (document.activeElement.id === 'foodDesc' || document.activeElement.id === 'foodCal')) {
+      addFood();
+    }
+  });
+
+  // Workout
+  function renderWorkout() {
+    const dow = new Date().getDay();
+    const w = workouts[dow];
+    const el = document.getElementById('workoutContent');
+
+    if (w.rest) {
+      el.innerHTML = `
+        <div class="rest-day">
+          <div class="big">REST</div>
+          <div class="sub">Recovery is part of the grind</div>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `
+      <div class="day-label">${w.label}</div>
+      <div class="day-sub">${w.sub}</div>
+    `;
+
+    if (w.cardio) {
+      html += `
+        <div class="cardio-card">
+          <div class="cardio-info">
+            <div class="cardio-title">Post-Lift Cardio</div>
+            <div class="cardio-detail">30 min incline treadmill walk · 3.5 mph · 10–12% incline</div>
+          </div>
+        </div>
+      `;
+    }
+
+    html += `<div class="workout-card"><div class="workout-card-header"><span class="workout-card-title">Lifts</span></div>`;
+    w.exercises.forEach(ex => {
+      html += `
+        <div class="exercise-row">
+          <div class="exercise-name${ex.main ? ' main' : ''}">${ex.name}${ex.main ? ' ★' : ''}</div>
+          <div class="exercise-sets">${ex.sets}</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    el.innerHTML = html;
+  }
+
+  const bwWorkouts = {
+    1: { // Monday - Leg substitute
+      sub: "Monday — Leg Day Substitute",
+      note: "No squat rack? No problem. These hit quads, hamstrings, and glutes hard with just your bodyweight.",
+      cardio: "30 min brisk walk or jog outside · push the pace",
+      exercises: [
+        { name: "Jump Squats", sets: "4 × 15", sub: "Explode up, land soft — replaces back squat", main: true },
+        { name: "Wall Sit", sets: "4 × 45 sec", sub: "Thighs parallel to floor, hold it" },
+        { name: "Reverse Lunges", sets: "3 × 12 each leg", sub: "Slow and controlled, replaces leg press" },
+        { name: "Single-Leg Hip Hinge", sets: "3 × 10 each", sub: "Balance on one leg, hinge forward — replaces RDL" },
+        { name: "Glute Bridge", sets: "3 × 20", sub: "Drive hips up, squeeze at top — replaces leg curl" },
+        { name: "Calf Raises", sets: "3 × 20", sub: "Use a stair edge for full range" },
+      ]
+    },
+    2: { // Tuesday - Upper/Back substitute
+      sub: "Tuesday — Upper & Back Substitute",
+      note: "Back and chest without a bar. Find a sturdy table or use the floor.",
+      cardio: "30 min brisk walk or jog outside · push the pace",
+      exercises: [
+        { name: "Push-Ups", sets: "4 × max reps", sub: "Slow down, chest to floor — replaces bench", main: true },
+        { name: "Table Rows / Inverted Rows", sets: "4 × 12", sub: "Lie under a table, pull chest to edge — replaces barbell row" },
+        { name: "Wide Push-Up", sets: "3 × 15", sub: "Hands wider than shoulder — hits chest differently" },
+        { name: "Superman Hold", sets: "3 × 12", sub: "Lie face down, lift arms and legs — lower back and traps" },
+        { name: "Pike Push-Up", sets: "3 × 10", sub: "Hips high, head toward floor — replaces shoulder press" },
+        { name: "Prone Y-T-W", sets: "3 × 10 each", sub: "Lie face down, raise arms in Y, T, W positions — replaces face pulls" },
+      ]
+    },
+    3: { rest: true }, // Wednesday
+    4: { // Thursday - Leg substitute
+      sub: "Thursday — Leg Day Substitute",
+      note: "Front squat substitute focuses on quad burn and unilateral work to keep both legs balanced.",
+      cardio: "30 min brisk walk or jog outside · push the pace",
+      exercises: [
+        { name: "Sissy Squats", sets: "4 × 12", sub: "Heels elevated, lean back — closest BW sub to front squat", main: true },
+        { name: "Step-Ups", sets: "4 × 12 each", sub: "Use stairs or a chair — replaces leg press" },
+        { name: "Bodyweight Squats", sets: "3 × 20", sub: "Pause 2 sec at bottom — replaces leg extension" },
+        { name: "Nordic Hamstring Curl", sets: "3 × 8", sub: "Kneel, anchor feet, lower slowly — replaces leg curl" },
+        { name: "Calf Raises", sets: "3 × 20", sub: "Single leg if too easy" },
+      ]
+    },
+    5: { // Friday - Upper substitute
+      sub: "Friday — Upper Day Substitute",
+      note: "Higher rep upper body circuit. Keep rest short — 45 sec between sets.",
+      cardio: "30 min brisk walk or jog outside · push the pace",
+      exercises: [
+        { name: "Diamond Push-Ups", sets: "4 × 12", sub: "Hands close together — hits triceps and inner chest", main: true },
+        { name: "Incline Push-Ups", sets: "3 × 15", sub: "Hands on chair or couch — replaces incline press" },
+        { name: "Pike Push-Ups", sets: "3 × 12", sub: "Replaces shoulder press" },
+        { name: "Tricep Dips", sets: "3 × 15", sub: "Use a chair — replaces tricep pushdown" },
+        { name: "Lateral Raise (Water Bottles)", sets: "3 × 15", sub: "Grab any light object — same movement" },
+      ]
+    },
+    6: { rest: true }, // Saturday
+    0: { rest: true }, // Sunday
+  };
+
+  function openBWModal() {
+    closeMenu();
+    const dow = new Date().getDay();
+    const bw = bwWorkouts[dow];
+    const subEl = document.getElementById('bwSub');
+    const bodyEl = document.getElementById('bwBody');
+
+    if (bw.rest) {
+      subEl.textContent = '';
+      bodyEl.innerHTML = `<div class="bw-rest">Today is a rest day.<br>Get your recovery in — you earned it.</div>`;
+    } else {
+      subEl.textContent = bw.sub;
+      let html = `<div class="bw-note">${bw.note}</div>`;
+      html += `<div class="bw-cardio"><div class="bw-cardio-title">Cardio</div><div class="bw-cardio-detail">${bw.cardio}</div></div>`;
+      bw.exercises.forEach(ex => {
+        html += `
+          <div class="bw-exercise">
+            <div class="bw-ex-left">
+              <div class="bw-ex-name${ex.main ? ' main-lift' : ''}">${ex.name}${ex.main ? ' ★' : ''}</div>
+              <div class="bw-ex-sub">${ex.sub}</div>
+            </div>
+            <div class="bw-ex-sets">${ex.sets}</div>
+          </div>
+        `;
+      });
+      bodyEl.innerHTML = html;
+    }
+
+    document.getElementById('bwOverlay').classList.add('open');
+    document.getElementById('bwModal').classList.add('open');
+  }
+
+  function closeBWModal() {
+    document.getElementById('bwOverlay').classList.remove('open');
+    document.getElementById('bwModal').classList.remove('open');
+  }
+
+  // Tabs
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Menu
+  function openMenu() {
+    document.getElementById('menuOverlay').classList.add('open');
+    document.getElementById('menuDrawer').classList.add('open');
+    renderHistory();
+  }
+
+  function closeMenu() {
+    document.getElementById('menuOverlay').classList.remove('open');
+    document.getElementById('menuDrawer').classList.remove('open');
+  }
+
+  function renderHistory() {
+    const all = getAllHistory();
+    const keys = Object.keys(all).sort().reverse().filter(k => k !== todayKey);
+    const el = document.getElementById('historyList');
+
+    if (keys.length === 0) {
+      el.innerHTML = '<div class="empty-history">No past days yet.<br>Come back tomorrow!</div>';
+      return;
+    }
+
+    el.innerHTML = keys.map(key => {
+      const dayFoods = all[key] || [];
+      const eaten = dayFoods.reduce((s, f) => s + f.cal, 0);
+      const pct = Math.min((eaten / GOAL) * 100, 100);
+      const over = eaten > GOAL;
+      const date = new Date(key + 'T12:00:00');
+      const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+      const foodRows = dayFoods.map(f => `<div class="history-food-row"><span>${escHtml(f.desc)}</span><span>${f.cal} cal</span></div>`).join('') || '<div style="color:#555">No items</div>';
+      return `
+        <div class="history-item" onclick="toggleHistory(this)">
+          <div class="history-date">${label}</div>
+          <div class="history-bar-wrap">
+            <div class="history-bar" style="width:${pct}%; background:${over ? 'var(--danger)' : 'var(--gold)'}"></div>
+          </div>
+          <div class="history-stats">
+            <span>${eaten} cal eaten</span>
+            <span style="color:${over ? 'var(--danger)' : 'var(--text-dim)'}">${over ? '+' + (eaten - GOAL) + ' over' : (GOAL - eaten) + ' under'}</span>
+          </div>
+          <div class="history-foods">${foodRows}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleHistory(el) {
+    el.classList.toggle('expanded');
+  }
+
+  // Init
+  purgeOldData();
+  setHeaderDate();
+  renderFoods();
+  updateDonut();
+  renderWorkout();
+
+  // Animate donut on load
+  setTimeout(() => {
+    const fill = document.getElementById('donutFill');
+    fill.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke 0.3s';
+    updateDonut();
+  }, 100);
+</script>
+</body>
+</html>
