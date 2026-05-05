@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calorie Tracker & Workout Log</title>
+<title>Calorie Tracker & Lifts</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -803,7 +803,7 @@
 
 <div class="header">
   <div class="header-left">
-    <div class="header-title">Calorie Tracker & Workout Log</div>
+    <div class="header-title">Calorie Tracker & Lifts</div>
     <div class="header-date" id="headerDate"></div>
   </div>
   <button class="hamburger" onclick="openMenu()" aria-label="Menu">
@@ -972,45 +972,98 @@
 
   // State
   let todayKey = getTodayKey();
-  let foods = loadFoods();
+  let foods = [];
 
-  function purgeOldData() {
-    try {
-      const all = JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-      const cutoffKey = cutoff.toISOString().split('T')[0];
-      let changed = false;
-      Object.keys(all).forEach(k => {
-        if (k < cutoffKey) { delete all[k]; changed = true; }
-      });
-      if (changed) localStorage.setItem('boilerFit_foods', JSON.stringify(all));
-    } catch {}
+  // IndexedDB storage — works on iPhone Safari home screen apps unlike localStorage
+  const DB_NAME = 'boilerFitDB';
+  const DB_VERSION = 1;
+  const STORE = 'foods';
+  let db = null;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      if (db) { resolve(db); return; }
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE)) {
+          d.createObjectStore(STORE, { keyPath: 'date' });
+        }
+      };
+      req.onsuccess = e => { db = e.target.result; resolve(db); };
+      req.onerror = e => reject(e);
+    });
+  }
+
+  function dbGet(date) {
+    return openDB().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(date);
+      req.onsuccess = e => resolve(e.target.result ? e.target.result.items : []);
+      req.onerror = e => reject(e);
+    }));
+  }
+
+  function dbSet(date, items) {
+    return openDB().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put({ date, items });
+      tx.oncomplete = () => resolve();
+      tx.onerror = e => reject(e);
+    }));
+  }
+
+  function dbGetAll() {
+    return openDB().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = e => {
+        const result = {};
+        (e.target.result || []).forEach(r => { result[r.date] = r.items; });
+        resolve(result);
+      };
+      req.onerror = e => reject(e);
+    }));
+  }
+
+  function dbDeleteOld(cutoffKey) {
+    return openDB().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(STORE, 'readwrite');
+      const store = tx.objectStore(STORE);
+      const req = store.openCursor();
+      req.onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (cursor.key < cutoffKey) cursor.delete();
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = e => reject(e);
+    }));
+  }
+
+  async function purgeOldData() {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffKey = cutoff.toISOString().split('T')[0];
+    try { await dbDeleteOld(cutoffKey); } catch {}
   }
 
   function getTodayKey() {
     return new Date().toISOString().split('T')[0];
   }
 
-  function loadFoods() {
-    try {
-      const all = JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
-      return all[todayKey] || [];
-    } catch { return []; }
+  async function loadFoods() {
+    try { return await dbGet(todayKey); } catch { return []; }
   }
 
-  function saveFoods() {
-    try {
-      const all = JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
-      all[todayKey] = foods;
-      localStorage.setItem('boilerFit_foods', JSON.stringify(all));
-    } catch {}
+  async function saveFoods() {
+    try { await dbSet(todayKey, foods); } catch {}
   }
 
-  function getAllHistory() {
-    try {
-      return JSON.parse(localStorage.getItem('boilerFit_foods') || '{}');
-    } catch { return {}; }
+  async function getAllHistory() {
+    try { return await dbGetAll(); } catch { return {}; }
   }
 
   // Date display
@@ -1064,7 +1117,7 @@
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function addFood() {
+  async function addFood() {
     const desc = document.getElementById('foodDesc').value.trim();
     const cal = parseInt(document.getElementById('foodCal').value);
     if (!desc || isNaN(cal) || cal < 0) {
@@ -1081,7 +1134,7 @@
     updateDonut();
   }
 
-  function deleteFood(i) {
+  async function deleteFood(i) {
     foods.splice(i, 1);
     saveFoods();
     renderFoods();
@@ -1254,8 +1307,8 @@
     document.getElementById('menuDrawer').classList.remove('open');
   }
 
-  function renderHistory() {
-    const all = getAllHistory();
+  async function renderHistory() {
+    const all = await getAllHistory();
     const keys = Object.keys(all).sort().reverse().filter(k => k !== todayKey);
     const el = document.getElementById('historyList');
 
@@ -1293,18 +1346,20 @@
   }
 
   // Init
-  purgeOldData();
-  setHeaderDate();
-  renderFoods();
-  updateDonut();
-  renderWorkout();
-
-  // Animate donut on load
-  setTimeout(() => {
-    const fill = document.getElementById('donutFill');
-    fill.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke 0.3s';
+  async function init() {
+    await purgeOldData();
+    foods = await loadFoods();
+    setHeaderDate();
+    renderFoods();
     updateDonut();
-  }, 100);
+    renderWorkout();
+    setTimeout(() => {
+      const fill = document.getElementById('donutFill');
+      fill.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke 0.3s';
+      updateDonut();
+    }, 100);
+  }
+  init();
 </script>
 </body>
 </html>
