@@ -1082,8 +1082,9 @@
 
   // IndexedDB storage — works on iPhone Safari home screen apps unlike localStorage
   const DB_NAME = 'boilerFitDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE = 'foods';
+  const DONE_STORE = 'workoutDone';
   let db = null;
 
   function openDB() {
@@ -1094,6 +1095,9 @@
         const d = e.target.result;
         if (!d.objectStoreNames.contains(STORE)) {
           d.createObjectStore(STORE, { keyPath: 'date' });
+        }
+        if (!d.objectStoreNames.contains(DONE_STORE)) {
+          d.createObjectStore(DONE_STORE, { keyPath: 'date' });
         }
       };
       req.onsuccess = e => { db = e.target.result; resolve(db); };
@@ -1144,6 +1148,24 @@
           cursor.continue();
         }
       };
+      tx.oncomplete = () => resolve();
+      tx.onerror = e => reject(e);
+    }));
+  }
+
+  function dbGetDone(date) {
+    return openDB().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(DONE_STORE, 'readonly');
+      const req = tx.objectStore(DONE_STORE).get(date);
+      req.onsuccess = e => resolve(e.target.result ? e.target.result.done : false);
+      req.onerror = () => resolve(false);
+    }));
+  }
+
+  function dbSetDone(date, done) {
+    return openDB().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(DONE_STORE, 'readwrite');
+      tx.objectStore(DONE_STORE).put({ date, done });
       tx.oncomplete = () => resolve();
       tx.onerror = e => reject(e);
     }));
@@ -1258,18 +1280,17 @@
     }
   });
 
-  function markWorkoutDone() {
+  async function markWorkoutDone() {
     document.getElementById('workoutCompleteOverlay').classList.add('show');
-    // Save completion for today
-    try { sessionStorage.setItem('workoutDone_' + todayKey, '1'); } catch {}
+    try { await dbSetDone(todayKey, true); } catch {}
   }
 
-  function undoWorkoutDone() {
+  async function undoWorkoutDone() {
     document.getElementById('workoutCompleteOverlay').classList.remove('show');
-    try { sessionStorage.removeItem('workoutDone_' + todayKey); } catch {}
+    try { await dbSetDone(todayKey, false); } catch {}
   }
 
-  function renderWorkout() {
+  async function renderWorkout() {
     const dow = new Date().getDay();
     const w = workouts[dow];
     const el = document.getElementById('workoutContent');
@@ -1288,14 +1309,13 @@
       return;
     }
 
-    // Show done button
     doneWrap.style.display = 'flex';
 
-    // Restore done state if already marked today
+    // Restore done state from IndexedDB
     try {
-      if (sessionStorage.getItem('workoutDone_' + todayKey) === '1') {
-        overlay.classList.add('show');
-      }
+      const done = await dbGetDone(todayKey);
+      if (done) overlay.classList.add('show');
+      else overlay.classList.remove('show');
     } catch {}
 
     let html = `
