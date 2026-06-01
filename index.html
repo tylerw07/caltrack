@@ -1374,6 +1374,55 @@ function renderProgress(){
     }
   }
 
+  // ── Reference Charts (percentage & rep calculator) ──
+  if(sq_cur || bp_cur){
+    const PCTS     = [0.55,0.60,0.625,0.65,0.70,0.725,0.75,0.775,0.80,0.825,0.85,0.875,0.90,0.925,0.95,0.975,1.00];
+    const PCT_LBLS = ['55','60','62.5','65','70','72.5','75','77.5','80','82.5','85','87.5','90','92.5','95','97.5','100'];
+    const HL_PCTS  = new Set([0.70,0.75,0.80,0.85,0.90,0.95,1.00]);
+    function r5(v){ return Math.round(v/5)*5; }
+    function repEst(w,r){ return Math.round(w*0.033*r+w); }
+
+    function buildTable(liftName, max){
+      if(!max) return '';
+      let t = `<div class="ref-lift">`;
+      t += `<div class="ref-lift-name">${liftName} · ${max} lbs</div>`;
+
+      // % chart
+      t += `<div class="ref-sub">% Chart</div>`;
+      t += `<table class="ref-tbl"><thead><tr><th>%</th><th>lbs</th><th>%</th><th>lbs</th></tr></thead><tbody>`;
+      for(let i=0;i<PCTS.length;i+=2){
+        const a=PCTS[i], b=PCTS[i+1];
+        const hlA=HL_PCTS.has(a), hlB=b!==undefined&&HL_PCTS.has(b);
+        t += `<tr>`;
+        t += `<td${hlA?' class="hl"':''}>${PCT_LBLS[i]}%</td><td${hlA?' class="hl"':''}>${r5(max*a)}</td>`;
+        if(b!==undefined) t += `<td${hlB?' class="hl"':''}>${PCT_LBLS[i+1]}%</td><td${hlB?' class="hl"':''}>${r5(max*b)}</td>`;
+        else t += `<td></td><td></td>`;
+        t += `</tr>`;
+      }
+      t += `</tbody></table>`;
+
+      // Rep calc — from 70% up to 100% in 5-lb steps
+      t += `<div class="ref-sub" style="margin-top:10px">Rep Calculator</div>`;
+      t += `<table class="ref-tbl"><thead><tr><th>wt</th><th>1rm</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody>`;
+      const lo = r5(max*0.70), hi = r5(max);
+      for(let w=lo; w<=hi; w+=5){
+        const isCur = (w===hi);
+        t += `<tr${isCur?' class="ref-cur"':''}>`;
+        t += `<td>${w}</td><td>${r5(w)}</td>`;
+        for(let r=1;r<=5;r++) t += `<td>${repEst(w,r)}</td>`;
+        t += `</tr>`;
+      }
+      t += `</tbody></table></div>`;
+      return t;
+    }
+
+    h += `<details class="ref-details"><summary class="ref-summary">▸ Reference Charts</summary>`;
+    h += `<div class="ref-wrap">`;
+    if(sq_cur) h += buildTable('Back Squat', sq_cur);
+    if(bp_cur) h += buildTable('Bench Press', bp_cur);
+    h += `</div></details>`;
+  }
+
   h += `</div>`;
   return h;
 }
@@ -1496,18 +1545,40 @@ function updateMaxesBtnState(){
 // ══════════════════════════════════════
 //  REST TIMER  (tap-to-start, prescribed rest)
 // ══════════════════════════════════════
-const restTimers = {}; // key -> {secs, remaining, interval, running}
+// ── NOTIFICATION PERMISSION ──
+let notifGranted = false;
+(function askNotif(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted'){ notifGranted = true; return; }
+  if(Notification.permission !== 'denied'){
+    Notification.requestPermission().then(p => { notifGranted = (p==='granted'); });
+  }
+})();
+
+function fireNotif(liftName, secs){
+  if(!notifGranted) return;
+  try {
+    new Notification('Rest Complete ✓', {
+      body: liftName ? fmtSecs(secs)+' rest done — back to '+liftName : fmtSecs(secs)+' rest done — back to work!',
+      icon: 'apple-touch-icon.png',
+      tag: 'rest-timer',
+      renotify: true,
+      silent: false
+    });
+  } catch(e){}
+}
+
+const restTimers = {}; // key -> {secs, endTime, displayInterval, notifTimeout, running, liftName}
 
 function toggleRestTimer(key, prescribedSecs){
-  if(!restTimers[key]) restTimers[key] = {secs: prescribedSecs, remaining: prescribedSecs, interval:null, running:false};
+  if(!restTimers[key]) restTimers[key] = {secs: prescribedSecs, endTime:0, displayInterval:null, notifTimeout:null, running:false, liftName:''};
   const rt = restTimers[key];
 
   if(rt.running){
-    // Tap while running = cancel and reset
-    clearInterval(rt.interval);
+    // Cancel & reset
+    clearInterval(rt.displayInterval);
+    clearTimeout(rt.notifTimeout);
     rt.running = false;
-    rt.remaining = prescribedSecs;
-    rt.secs = prescribedSecs;
     const btn = document.getElementById('rtb_'+key);
     if(btn) btn.classList.remove('running');
     const v = document.getElementById('rtv_'+key);
@@ -1517,30 +1588,49 @@ function toggleRestTimer(key, prescribedSecs){
     return;
   }
 
-  // Start the countdown
+  // Grab lift name for notification
+  const hdr = document.getElementById('rtw_'+key);
+  if(hdr){
+    const lnEl = hdr.closest('.lift-blk') && hdr.closest('.lift-blk').querySelector('.lift-name');
+    if(lnEl) rt.liftName = lnEl.firstChild ? lnEl.firstChild.textContent.trim() : lnEl.textContent.trim();
+  }
+
+  // Ask for permission on first timer start
+  if(!notifGranted && 'Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission().then(p => { notifGranted = (p==='granted'); });
+  }
+
+  // Start using absolute wall-clock end time (drift-free even when throttled)
   rt.secs = prescribedSecs;
-  rt.remaining = prescribedSecs;
+  rt.endTime = Date.now() + prescribedSecs * 1000;
   rt.running = true;
+
   const btn = document.getElementById('rtb_'+key);
   if(btn) btn.classList.add('running');
   const s0 = document.getElementById('rts_'+key);
   if(s0) s0.textContent = 'Tap to cancel';
 
-  rt.interval = setInterval(()=>{
-    rt.remaining--;
+  // Notification fires at exact end time regardless of app state
+  rt.notifTimeout = setTimeout(() => {
+    fireNotif(rt.liftName, prescribedSecs);
+  }, prescribedSecs * 1000);
+
+  // Display ticker — recalculates from endTime so never drifts
+  rt.displayInterval = setInterval(()=>{
+    const remaining = Math.max(0, Math.round((rt.endTime - Date.now()) / 1000));
     const v = document.getElementById('rtv_'+key);
     const st = document.getElementById('rts_'+key);
-    if(rt.remaining <= 0){
-      clearInterval(rt.interval);
+    if(remaining <= 0){
+      clearInterval(rt.displayInterval);
       rt.running = false;
       const b = document.getElementById('rtb_'+key);
       if(b) b.classList.remove('running');
       if(v){ v.textContent = 'Done!'; v.style.color='var(--green2)'; }
       if(st) st.textContent = 'Tap to restart';
     } else {
-      if(v) v.textContent = fmtSecs(rt.remaining);
+      if(v) v.textContent = fmtSecs(remaining);
     }
-  }, 1000);
+  }, 500);
 }
 window.toggleRestTimer = toggleRestTimer;
 
